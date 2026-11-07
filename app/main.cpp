@@ -54,6 +54,7 @@
 #include "streaming/session.h"
 #include "settings/streamingpreferences.h"
 #include "gui/sdlgamepadkeynavigation.h"
+#include "gui-bp/bpinput.h"
 
 #if defined(Q_OS_WIN32)
 #define IS_UNSPECIFIED_HANDLE(x) ((x) == INVALID_HANDLE_VALUE || (x) == NULL)
@@ -969,6 +970,13 @@ int main(int argc, char *argv[])
                                                        return StreamingPreferences::get(qmlEngine);
                                                    });
 
+    // Big Picture UI (fork addition)
+    qmlRegisterSingletonType<BpInput>("BpInput", 1, 0,
+                                      "BpInput",
+                                      [](QQmlEngine* qmlEngine, QJSEngine*) -> QObject* {
+                                          return new BpInput(StreamingPreferences::get(qmlEngine));
+                                      });
+
     // Create the identity manager on the main thread
     IdentityManager::get();
 
@@ -1045,8 +1053,21 @@ int main(int argc, char *argv[])
         engine.rootContext()->setContextProperty("initialView", initialView);
         engine.rootContext()->setContextProperty("isGuiLaunch", commandLineParserResult == GlobalCommandLineParser::NormalStartRequested);
 
+        // Big Picture UI (fork addition): opt-in via --big-picture or MOONLIGHT_BIG_PICTURE=1.
+        // It requires Qt 6.5+ (QtQuick.Effects), so older Qt falls back to the desktop UI.
+        bool bigPicture = commandLineParserResult == GlobalCommandLineParser::NormalStartRequested &&
+                          (parser.isBigPictureRequested() || qEnvironmentVariableIntValue("MOONLIGHT_BIG_PICTURE") != 0);
+#if QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
+        if (bigPicture) {
+            SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION,
+                        "Big Picture UI requires Qt 6.5 or later. Falling back to the desktop UI.");
+            bigPicture = false;
+        }
+#endif
+
         // Load the main.qml file
-        engine.load(QUrl(QStringLiteral("qrc:/gui/main.qml")));
+        engine.load(QUrl(bigPicture ? QStringLiteral("qrc:/gui-bp/BigPicture.qml")
+                                    : QStringLiteral("qrc:/gui/main.qml")));
         if (engine.rootObjects().isEmpty())
             return -1;
     }

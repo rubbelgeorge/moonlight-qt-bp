@@ -1,0 +1,23 @@
+<RCC>
+    <qresource prefix="/">
+        <file>gui-bp/qmldir</file>
+        <file>gui-bp/AppTile.qml</file>
+        <file>gui-bp/BigPicture.qml</file>
+        <file>gui-bp/BpButton.qml</file>
+        <file>gui-bp/BpDialog.qml</file>
+        <file>gui-bp/BpMenu.qml</file>
+        <file>gui-bp/BpModal.qml</file>
+        <file>gui-bp/BpSettingsView.qml</file>
+        <file>gui-bp/BusyDots.qml</file>
+        <file>gui-bp/ButtonGlyph.qml</file>
+        <file>gui-bp/ButtonHintBar.qml</file>
+        <file>gui-bp/HeroBackground.qml</file>
+        <file>gui-bp/HomeView.qml</file>
+        <file>gui-bp/HostTab.qml</file>
+        <file>gui-bp/OnScreenKeyboard.qml</file>
+        <file>gui-bp/StreamProfilePicker.qml</file>
+        <file>gui-bp/StreamProfiles.qml</file>
+        <file>gui-bp/StreamView.qml</file>
+        <file>gui-bp/Theme.qml</file>
+    </qresource>
+</RCC>

@@ -161,6 +161,15 @@ void StreamUtils::screenSpaceToNormalizedDeviceCoords(SDL_Rect* src, SDL_FRect* 
 
 int StreamUtils::getDisplayRefreshRate(SDL_Window* window)
 {
+    // Under gamescope the Xwayland mode SDL sees can be stale (see getGamescopeRefreshRate)
+    int gamescopeRefreshRate = getGamescopeRefreshRate();
+    if (gamescopeRefreshRate > 0) {
+        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION,
+                    "Using gamescope display refresh rate: %d Hz",
+                    gamescopeRefreshRate);
+        return gamescopeRefreshRate;
+    }
+
     int displayIndex = SDL_GetWindowDisplayIndex(window);
     if (displayIndex < 0) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
@@ -474,4 +483,69 @@ void StreamUtils::enterAsyncLoggingMode()
 void StreamUtils::exitAsyncLoggingMode()
 {
     g_AsyncLoggingEnabled.deref();
+}
+
+// Kept at the end of the file: Xlib defines macros (None, Bool, Status, ...)
+// that would clash with code above.
+#ifdef HAS_X11
+#include <X11/Xlib.h>
+#include <X11/Xatom.h>
+#include <QByteArray>
+#include <QDir>
+#include <QStringList>
+#include <algorithm>
+#endif
+
+int StreamUtils::getGamescopeRefreshRate()
+{
+#ifdef HAS_X11
+    // Only relevant inside a gamescope session (Steam Deck Game Mode)
+    if (qgetenv("XDG_CURRENT_DESKTOP") != "gamescope" && qEnvironmentVariableIsEmpty("GAMESCOPE_WAYLAND_DISPLAY")) {
+        return 0;
+    }
+
+    // gamescope runs several Xwayland servers (Steam on the first one, games on
+    // the next), but only updates the RandR mode of the first one when the
+    // refresh rate is changed in the Quick Access menu. Apps on the other
+    // servers keep seeing the rate gamescope started with. The current panel
+    // refresh rate is published as a root window property on the first server,
+    // so look for it on the local X displays, lowest display number first.
+    QStringList sockets = QDir("/tmp/.X11-unix").entryList(QStringList("X*"), QDir::System);
+    std::sort(sockets.begin(), sockets.end(), [](const QString& a, const QString& b) {
+        return a.mid(1).toInt() < b.mid(1).toInt();
+    });
+
+    for (const QString& socket : std::as_const(sockets)) {
+        QByteArray displayName = ":" + socket.mid(1).toLatin1();
+        Display* display = XOpenDisplay(displayName.constData());
+        if (display == nullptr) {
+            continue;
+        }
+
+        int refreshRate = 0;
+        Atom atom = XInternAtom(display, "GAMESCOPE_DISPLAY_REFRESH_RATE_FEEDBACK", True);
+        if (atom != None) {
+            Atom actualType;
+            int actualFormat;
+            unsigned long itemCount, bytesAfter;
+            unsigned char* data = nullptr;
+            if (XGetWindowProperty(display, DefaultRootWindow(display), atom, 0, 1, False, XA_CARDINAL,
+                                   &actualType, &actualFormat, &itemCount, &bytesAfter, &data) == Success &&
+                    data != nullptr) {
+                if (actualFormat == 32 && itemCount == 1) {
+                    // 32-bit X properties are returned as longs
+                    refreshRate = (int)*(long*)data;
+                }
+                XFree(data);
+            }
+        }
+        XCloseDisplay(display);
+
+        if (refreshRate > 0 && refreshRate <= 1000) {
+            return refreshRate;
+        }
+    }
+#endif
+
+    return 0;
 }

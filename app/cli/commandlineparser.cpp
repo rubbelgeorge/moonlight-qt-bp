@@ -165,10 +165,13 @@ GlobalCommandLineParser::ParseResult GlobalCommandLineParser::parse(const QStrin
         "See 'moonlight <action> --help' for help of specific action."
     );
     parser.addPositionalArgument("action", "Action to execute", "<action>");
+    parser.addOption(QCommandLineOption("big-picture", "Start the controller-friendly Big Picture UI."));
     parser.parse(args);
     auto posArgs = parser.positionalArguments();
 
     if (posArgs.isEmpty()) {
+        m_BigPicture = parser.isSet("big-picture");
+
         // This method will not return and terminates the process if --version
         // or --help is specified
         parser.handleHelpAndVersionOptions();

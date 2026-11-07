@@ -7,3 +7,7 @@ build/
 libs/
 config.tests/*/.qmake.stash
 config.tests/*/Makefile
+
+# Big Picture fork: local build/tooling artifacts
+aqtinstall.log
+*.AppImage

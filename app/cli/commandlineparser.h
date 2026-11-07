@@ -21,6 +21,11 @@ public:
 
     ParseResult parse(const QStringList &args);
 
+    // Big Picture UI requested via --big-picture (fork addition)
+    bool isBigPictureRequested() const { return m_BigPicture; }
+
+private:
+    bool m_BigPicture = false;
 };
 
 class QuitCommandLineParser

@@ -453,6 +453,11 @@ RESOURCES += \
     resources.qrc \
     qml.qrc
 
+# Big Picture UI (fork addition, kept in one block to ease upstream merges)
+SOURCES += gui-bp/bpinput.cpp
+HEADERS += gui-bp/bpinput.h
+RESOURCES += qml-bp.qrc
+
 TRANSLATIONS += \
     languages/qml_zh_CN.ts \
     languages/qml_de.ts \

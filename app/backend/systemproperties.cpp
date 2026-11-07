@@ -275,5 +275,17 @@ void SystemProperties::refreshDisplays()
         }
     }
 
+    // Under gamescope (Steam Deck Game Mode) the Xwayland modes don't follow
+    // refresh rate changes, so use the rate gamescope reports for its output.
+    int gamescopeRefreshRate = StreamUtils::getGamescopeRefreshRate();
+    if (gamescopeRefreshRate > 0) {
+        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION,
+                    "Using gamescope display refresh rate: %d Hz",
+                    gamescopeRefreshRate);
+        for (int i = 0; i < monitorRefreshRates.size(); i++) {
+            monitorRefreshRates[i] = gamescopeRefreshRate;
+        }
+    }
+
     SDL_QuitSubSystem(SDL_INIT_VIDEO);
 }

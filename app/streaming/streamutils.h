@@ -26,6 +26,11 @@ public:
     static
     int getDisplayRefreshRate(SDL_Window* window);
 
+    // Current panel refresh rate published by gamescope (Steam Deck Game Mode),
+    // or 0 when not running under gamescope.
+    static
+    int getGamescopeRefreshRate();
+
     static
     bool hasFastAes();
 
